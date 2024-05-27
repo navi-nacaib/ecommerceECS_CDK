@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EcommerceEcsCdkApp {
+
     public static void main(final String[] args) {
         App app = new App();
 

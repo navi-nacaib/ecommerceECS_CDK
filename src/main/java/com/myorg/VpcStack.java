@@ -10,10 +10,14 @@ public class VpcStack extends Stack {
 
     private final Vpc vpc;
 
-    public VpcStack(final Construct scope, final String id, final StackProps stackProps) {
-        super(scope, id, stackProps);
+    public VpcStack(final Construct scope, final String id, final StackProps props) {
+        super(scope, id, props);
 
-        this.vpc = new Vpc(this,  "Vpc", VpcProps.builder()
+        this.vpc = createVpc();
+    }
+
+    private Vpc createVpc() {
+        return new Vpc(this, "Vpc", VpcProps.builder()
                 .vpcName("ECommerceVPC")
                 .maxAzs(2)
                 // Do not do this in production

@@ -12,10 +12,14 @@ public class EcrStack extends Stack {
 
     private final Repository productsServiceRepository;
 
-    public EcrStack(final Construct scope, final String id, final StackProps stackProps) {
-        super(scope, id, stackProps);
+    public EcrStack(final Construct scope, final String id, final StackProps props) {
+        super(scope, id, props);
 
-        this.productsServiceRepository = new Repository(this, "ProductsService", RepositoryProps.builder()
+        this.productsServiceRepository = createProductsServiceRepository();
+    }
+
+    private Repository createProductsServiceRepository() {
+        return new Repository(this, "ProductsService", RepositoryProps.builder()
                 .repositoryName("productsservice") // should match docker image name
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .imageTagMutability(TagMutability.IMMUTABLE)
