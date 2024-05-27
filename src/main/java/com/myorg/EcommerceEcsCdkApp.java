@@ -45,6 +45,23 @@ public class EcommerceEcsCdkApp {
                 .tags(infraTags)
                 .build());
 
+        // Use the VpcStack created earlier to pass into this ClusterStack
+        ClusterStack clusterStack = new ClusterStack(app, "Cluster", StackProps.builder()
+                .env(environment)
+                .tags(infraTags)
+                .build(),
+                new ClusterStackProps(vpcStack.getVpc()));
+        clusterStack.addDependency(vpcStack);
+
+        // Since I want the network load balancer to be internal to the VPC, the VPC stack should be created before this stack
+        // Destroy this stack to reduce infrastructure costs when not in use
+        NlbStack nlbStack = new NlbStack(app, "Nlb", StackProps.builder()
+                .env(environment)
+                .tags(infraTags)
+                .build(),
+                new NlbStackProps(vpcStack.getVpc()));
+        nlbStack.addDependency(vpcStack);
+
         app.synth();
     }
 }

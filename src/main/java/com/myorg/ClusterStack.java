@@ -19,7 +19,7 @@ public class ClusterStack extends Stack {
 
     private Cluster createCluster(Vpc vpc) {
         return new Cluster(this, "Cluster", ClusterProps.builder()
-                .clusterName("Ecommerce")
+                .clusterName("ECommerce")
                 .vpc(vpc)
                 .containerInsights(true)
                 .build());
