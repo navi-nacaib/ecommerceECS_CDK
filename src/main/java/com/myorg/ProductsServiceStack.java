@@ -3,10 +3,12 @@ package com.myorg;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.Peer;
+import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ecr.Repository;
-import software.amazon.awscdk.services.ecs.*;
 import software.amazon.awscdk.services.ecs.Protocol;
+import software.amazon.awscdk.services.ecs.*;
 import software.amazon.awscdk.services.elasticloadbalancingv2.*;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.LogGroupProps;
@@ -16,6 +18,7 @@ import software.constructs.Construct;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ProductsServiceStack extends Stack {
 
@@ -28,23 +31,14 @@ public class ProductsServiceStack extends Stack {
         Map<String, String> envVariables = new HashMap<>();
         envVariables.put("SERVER_PORT", "8080");
 
-        taskDefinition.addContainer("ProductsServiceContainer", ContainerDefinitionProps.builder()
-                .image(ContainerImage.fromEcrRepository(productServiceProps.repository(), "1.0.0"))
-                .containerName("productsService")
-                .logging(awsLogDriver)
-                .portMappings(Collections.singletonList(PortMapping.builder()
-                                .containerPort(8080)
-                                .protocol(Protocol.TCP)
-                        .build()))
-                .environment(envVariables)
-                .build());
+        addContainerToTaskDefinition(taskDefinition, productServiceProps, awsLogDriver, envVariables);
 
-        ApplicationListener applicationListener = productServiceProps.applicationLoadBalancer()
-                .addListener("ProductServiceAlbListener", ApplicationListenerProps.builder()
-                        .port(8080)
-                        .protocol(ApplicationProtocol.HTTP)
-                        .loadBalancer(productServiceProps.applicationLoadBalancer())
-                        .build());
+        ApplicationListener applicationListener = createApplicationListener(productServiceProps.applicationLoadBalancer());
+
+        FargateService fargateService = createFargateService(productServiceProps, taskDefinition);
+
+        productServiceProps.repository().grantPull(Objects.requireNonNull(taskDefinition.getExecutionRole()));
+        fargateService.getConnections().getSecurityGroups().get(0).addIngressRule(Peer.anyIpv4(), Port.tcp(8080));
     }
 
     private FargateTaskDefinition createProductsServiceTaskDefinition() {
@@ -63,6 +57,36 @@ public class ProductsServiceStack extends Stack {
                         .retention(RetentionDays.ONE_MONTH)
                         .build()))
                 .streamPrefix("products-service")
+                .build());
+    }
+
+    private ApplicationListener createApplicationListener(ApplicationLoadBalancer applicationLoadBalancer) {
+        return new ApplicationListener(this, "ProductServiceAlbListener", ApplicationListenerProps.builder()
+                .port(8080)
+                .protocol(ApplicationProtocol.HTTP)
+                .loadBalancer(applicationLoadBalancer)
+                .build());
+    }
+
+    private void addContainerToTaskDefinition(FargateTaskDefinition taskDefinition, ProductServiceProps productServiceProps, AwsLogDriver awsLogDriver, Map<String, String> envVariables) {
+        taskDefinition.addContainer("ProductsServiceContainer", ContainerDefinitionProps.builder()
+                .image(ContainerImage.fromEcrRepository(productServiceProps.repository(), "1.0.0"))
+                .containerName("productsService")
+                .logging(awsLogDriver)
+                .portMappings(Collections.singletonList(PortMapping.builder()
+                        .containerPort(8080)
+                        .protocol(Protocol.TCP)
+                        .build()))
+                .environment(envVariables)
+                .build());
+    }
+
+    private FargateService createFargateService(ProductServiceProps productServiceProps, FargateTaskDefinition fargateTaskDefinition) {
+        return new FargateService(this, "ProductsService", FargateServiceProps.builder()
+                .serviceName("ProductsService")
+                .cluster(productServiceProps.cluster())
+                .taskDefinition(fargateTaskDefinition)
+                .desiredCount(2)
                 .build());
     }
 }
