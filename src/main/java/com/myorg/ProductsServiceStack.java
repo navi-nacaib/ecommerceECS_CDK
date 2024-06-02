@@ -44,6 +44,8 @@ public class ProductsServiceStack extends Stack {
         fargateService.getConnections().getSecurityGroups().get(0).addIngressRule(Peer.anyIpv4(), Port.tcp(8080));
 
         addTargetsToApplicationListener(applicationListener, fargateService);
+
+        NetworkListener networkListener = createNetworkListener(productServiceProps.networkLoadBalancer());
     }
 
     private FargateTaskDefinition createProductsServiceTaskDefinition() {
@@ -111,6 +113,14 @@ public class ProductsServiceStack extends Stack {
                                 .path("/actuator/health")
                                 .port("8080")
                                 .build())
+                        .build());
+    }
+
+    private NetworkListener createNetworkListener(NetworkLoadBalancer networkLoadBalancer) {
+        return networkLoadBalancer.addListener("ProductsServiceNlbListener",
+                BaseNetworkListenerProps.builder()
+                        .port(8080)
+                        .protocol(software.amazon.awscdk.services.elasticloadbalancingv2.Protocol.TCP)
                         .build());
     }
 }
