@@ -62,6 +62,24 @@ public class EcommerceEcsCdkApp {
                 new NlbStackProps(vpcStack.getVpc()));
         nlbStack.addDependency(vpcStack);
 
+        // This will be useful for AWS cost explorer
+        Map<String, String> productsServicesTags = new HashMap<>();
+        infraTags.put("team", "PersonalProject");
+        infraTags.put("cost", "ProductsService");
+
+        ProductsServiceStack productsServiceStack = new ProductsServiceStack(app, "ProductsService",
+                StackProps.builder()
+                        .env(environment)
+                        .tags(productsServicesTags)
+                        .build(),
+                new ProductServiceProps(vpcStack.getVpc(), clusterStack.getCluster(),
+                        nlbStack.getNetworkLoadBalancer(), nlbStack.getApplicationLoadBalancer(),
+                        ecrStack.getProductsServiceRepository()));
+        productsServiceStack.addDependency(vpcStack);
+        productsServiceStack.addDependency(clusterStack);
+        productsServiceStack.addDependency(nlbStack);
+        productsServiceStack.addDependency(ecrStack);
+
         app.synth();
     }
 }
