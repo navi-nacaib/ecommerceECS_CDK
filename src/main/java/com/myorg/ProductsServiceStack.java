@@ -46,6 +46,8 @@ public class ProductsServiceStack extends Stack {
         addTargetsToApplicationListener(applicationListener, fargateService);
 
         NetworkListener networkListener = createNetworkListener(productServiceProps.networkLoadBalancer());
+
+        addTargetsToNetworkListener(networkListener, fargateService);
     }
 
     private FargateTaskDefinition createProductsServiceTaskDefinition() {
@@ -121,6 +123,21 @@ public class ProductsServiceStack extends Stack {
                 BaseNetworkListenerProps.builder()
                         .port(8080)
                         .protocol(software.amazon.awscdk.services.elasticloadbalancingv2.Protocol.TCP)
+                        .build());
+    }
+
+    private void addTargetsToNetworkListener(NetworkListener networkListener, FargateService fargateService) {
+        networkListener.addTargets("ProductsServiceNlbTarget",
+                AddNetworkTargetsProps.builder()
+                        .port(8080)
+                        .protocol(software.amazon.awscdk.services.elasticloadbalancingv2.Protocol.TCP)
+                        .targetGroupName("productsServiceNlb")
+                        .targets(Collections.singletonList(fargateService.loadBalancerTarget(
+                                LoadBalancerTargetOptions.builder()
+                                        .containerName("productsService")
+                                        .containerPort(8080)
+                                        .protocol(Protocol.TCP)
+                                        .build())))
                         .build());
     }
 }
