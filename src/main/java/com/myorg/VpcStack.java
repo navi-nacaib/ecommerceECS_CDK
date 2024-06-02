@@ -20,8 +20,6 @@ public class VpcStack extends Stack {
         return new Vpc(this, "Vpc", VpcProps.builder()
                 .vpcName("ECommerceVPC")
                 .maxAzs(2)
-                // Do not do this in production
-                // .natGateways(0)
                 .build());
     }
 
