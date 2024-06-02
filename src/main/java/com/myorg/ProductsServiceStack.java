@@ -25,7 +25,7 @@ import java.util.Objects;
 public class ProductsServiceStack extends Stack {
 
     public ProductsServiceStack(final Construct scope, final String id, final StackProps stackProps, ProductServiceProps productServiceProps) {
-        super(scope, id, null);
+        super(scope, id, stackProps);
 
         FargateTaskDefinition taskDefinition = createProductsServiceTaskDefinition();
         AwsLogDriver awsLogDriver = createAwsLogDriver();
