@@ -27,19 +27,19 @@ public class ProductsServiceStack extends Stack {
     public ProductsServiceStack(final Construct scope, final String id, final StackProps stackProps, ProductServiceProps productServiceProps) {
         super(scope, id, stackProps);
 
-        FargateTaskDefinition taskDefinition = createProductsServiceTaskDefinition();
+        FargateTaskDefinition fargateTaskDefinition = createProductsServiceFargateTaskDefinition();
         AwsLogDriver awsLogDriver = createAwsLogDriver();
 
         Map<String, String> envVariables = new HashMap<>();
         envVariables.put("SERVER_PORT", "8080");
 
-        addContainerToTaskDefinition(taskDefinition, productServiceProps, awsLogDriver, envVariables);
+        addContainerToTaskDefinition(fargateTaskDefinition, productServiceProps, awsLogDriver, envVariables);
 
         ApplicationListener applicationListener = createApplicationListener(productServiceProps.applicationLoadBalancer());
 
-        FargateService fargateService = createFargateService(productServiceProps, taskDefinition);
+        FargateService fargateService = createFargateService(productServiceProps, fargateTaskDefinition);
 
-        productServiceProps.repository().grantPull(Objects.requireNonNull(taskDefinition.getExecutionRole()));
+        productServiceProps.repository().grantPull(Objects.requireNonNull(fargateTaskDefinition.getExecutionRole()));
 
         fargateService.getConnections().getSecurityGroups().get(0).addIngressRule(Peer.anyIpv4(), Port.tcp(8080));
 
@@ -50,7 +50,7 @@ public class ProductsServiceStack extends Stack {
         addTargetsToNetworkListener(networkListener, fargateService);
     }
 
-    private FargateTaskDefinition createProductsServiceTaskDefinition() {
+    private FargateTaskDefinition createProductsServiceFargateTaskDefinition() {
         return new FargateTaskDefinition(this, "ProductsServiceTaskDefinition", FargateTaskDefinitionProps.builder()
                 .family("products-service")
                 .cpu(512)
@@ -77,9 +77,9 @@ public class ProductsServiceStack extends Stack {
                 .build());
     }
 
-    private void addContainerToTaskDefinition(FargateTaskDefinition taskDefinition, ProductServiceProps productServiceProps, AwsLogDriver awsLogDriver, Map<String, String> envVariables) {
-        taskDefinition.addContainer("ProductsServiceContainer",
-                ContainerDefinitionProps.builder()
+    private void addContainerToTaskDefinition(FargateTaskDefinition fargateTaskDefinition, ProductServiceProps productServiceProps, AwsLogDriver awsLogDriver, Map<String, String> envVariables) {
+        fargateTaskDefinition.addContainer("ProductsServiceContainer",
+                ContainerDefinitionOptions.builder()
                         .image(ContainerImage.fromEcrRepository(productServiceProps.repository(), "1.0.0"))
                         .containerName("productsService")
                         .logging(awsLogDriver)

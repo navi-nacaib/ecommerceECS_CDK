@@ -23,7 +23,7 @@ public class NlbStack extends Stack {
         super(scope, id, props);
 
         this.networkLoadBalancer = createNetworkLoadBalancer(nlbStackProps.vpc());
-        this.vpcLink = createVpcLink(nlbStackProps.vpc());
+        this.vpcLink = createVpcLink();
         this.applicationLoadBalancer = createApplicationLoadBalancer(nlbStackProps.vpc());
     }
 
@@ -35,7 +35,7 @@ public class NlbStack extends Stack {
                 .build());
     }
 
-    private VpcLink createVpcLink(Vpc vpc) {
+    private VpcLink createVpcLink() {
         return new VpcLink(this, "VpcLink", VpcLinkProps.builder()
                 .targets(Collections.singletonList(this.networkLoadBalancer))
                 .build());
